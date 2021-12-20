@@ -17,5 +17,27 @@ jobs:
         password: ${{ secrets.DOCKERHUB_TOKEN }}
     
     - uses: actions/checkout@v2
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag hello-world:$(date +%s)
+    
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: ${{ github.repository_owner}}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Prepare docker tags for holder image
+      id: meta
+      uses: docker/metadata-action@v3
+      with:
+        images: ghcr.io/usingtechnology/hello-world
+        tags: |
+          type=sha 
+          
+    - name: Build and push verifier image
+      id: builder
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
